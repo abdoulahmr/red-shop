@@ -1,13 +1,15 @@
 from datetime import datetime
 import os
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from models import Order, Product, User, users, db
 from config import Config
+from api import api_bp
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder='static')
 app.config.from_object(Config)
 db.init_app(app)
+app.register_blueprint(api_bp)
 
 # Flask-Login Setup
 login_manager = LoginManager()
@@ -34,12 +36,14 @@ def product_view(id):
         last_name = request.form['last_name']
         address = request.form['address']
         quantity = int(request.form['quantity'])
+        phone_number = request.form['phone']
         new_order = Order(
             product_id=id,
             first_name=first_name,
             last_name=last_name,
             address=address,
-            quantity=quantity
+            quantity=quantity,
+            phone_number=phone_number
         )
         db.session.add(new_order)
         db.session.commit()
@@ -204,6 +208,8 @@ def order():
                    'quantity': order.quantity,
                    'date_time': order.date_time,
                    'product': order.product_title,
+                   'phone_number': order.phone_number,
+                   'status': order.status,
                    'note': order.note} for order, order.product_title in orders]
 
     return render_template('order.html', orders=order_list)

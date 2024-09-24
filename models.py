@@ -29,6 +29,16 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     image = db.Column(db.String(255), nullable=False)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'quantity': self.quantity,
+            'price': self.price,
+            'image': self.image
+        }
+
 class Order(db.Model):
     __tablename__ = 'orders'
 
@@ -41,5 +51,20 @@ class Order(db.Model):
     date_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     status = db.Column(db.String(255), default='pending', nullable=False)
     note = db.Column(db.Text)
+    phone_number = db.Column(db.Integer, nullable=False)
 
     product = db.relationship('Product', backref='orders')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'product_id': self.product_id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'address': self.address,
+            'quantity': self.quantity,
+            'date_time': self.date_time,
+            'status': self.status,
+            'note': self.note,
+            'phone_number': self.phone_number
+        }

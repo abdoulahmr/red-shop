@@ -72,10 +72,12 @@
                     <th class="p-3 text-left">First Name</th>
                     <th class="p-3 text-left">Last Name</th>
                     <th class="p-3 text-left">Address</th>
+                    <th class="p-3 text-left">Phone Number</th>
                     <th class="p-3 text-left">Quantity</th>
                     <th class="p-3 text-left">Date Time</th>
                     <th class="p-3 text-left">Product</th>
                     <th class="p-3 text-left">Note</th>
+                    <th class="p-3 text-left">Status</th>
                     <th class="p-3 text-left">Actions</th>
                 </tr>
             </thead>
@@ -86,10 +88,12 @@
                     <td class="p-3">{{ order.first_name }}</td>
                     <td class="p-3">{{ order.last_name }}</td>
                     <td class="p-3">{{ order.address }}</td>
+                    <td class="p-3">{{ order.phone_number }}</td>
                     <td class="p-3">{{ order.quantity }}</td>
                     <td class="p-3">{{ order.date_time }}</td>
                     <td class="p-3">{{ order.product }}</td>
                     <td class="p-3">{{ order.note }}</td>
+                    <td class="p-3">{{ order.status }}</td>
                     <td class="p-3 flex space-x-2">
                         <button onclick="togglePopup('edit_pop_{{ order.id }}')" class="bg-blue-600 text-white font-bold py-1 px-3 rounded-md hover:bg-blue-700" aria-label="Edit status">Edit Status</button>
                         <form action="{{ url_for('delete_order', id=order.id) }}" method="POST" class="inline">
@@ -115,7 +119,7 @@
                     <select id="status" name="status" class="w-full p-2 border border-gray-300 rounded-md">
                         <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
-                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                        <option value="delivered" {% if order.status == 'delivering' %}selected{% endif %}>Delivering</option>
                     </select>
                 </div>
                 <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700">Edit Order</button>
