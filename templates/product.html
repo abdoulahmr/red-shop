@@ -2,110 +2,896 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Products</title>
+    <title>Products — RED Shop Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/user.ico') }}">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        .hidden {
-            display: none;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red: #E5000A;
+            --red-dark: #A80007;
+            --red-glow: rgba(229,0,10,0.15);
+            --black: #0d0d0d;
+            --surface: #161616;
+            --card: #1e1e1e;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #f0f0f0;
+            --muted: #888;
+            --white: #ffffff;
+            --sidebar-w: 220px;
         }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--black);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 200;
+            transition: transform .3s;
+        }
+
+        .sidebar-logo {
+            padding: 28px 24px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-wordmark {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.7rem;
+            letter-spacing: 0.08em;
+            color: var(--white);
+            text-decoration: none;
+            display: block;
+        }
+
+        .logo-wordmark span { color: var(--red); }
+
+        .sidebar-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 22px 24px 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted);
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: color .2s, background .2s, border-color .2s;
+        }
+
+        .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+        .nav-link.active {
+            color: var(--white);
+            border-left-color: var(--red);
+            background: rgba(229,0,10,0.08);
+        }
+
+        .nav-link svg { flex-shrink: 0; opacity: 0.7; }
+        .nav-link.active svg { opacity: 1; color: var(--red); }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #f87171;
+            text-decoration: none;
+            transition: color .2s;
+        }
+
+        .logout-btn:hover { color: #fca5a5; }
+
+        /* ── MAIN CONTENT ── */
+        .main-wrap {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ── TOP BAR ── */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,13,13,0.85);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.06em;
+            color: var(--white);
+        }
+
+        .topbar-title span { color: var(--red); }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ── SEARCH ── */
+        .search-form {
+            display: flex;
+            position: relative;
+        }
+
+        .search-input {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            padding: 8px 44px 8px 16px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            width: 240px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s, width .3s;
+        }
+
+        .search-input::placeholder { color: var(--muted); }
+
+        .search-input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px var(--red-glow);
+            width: 300px;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--red);
+            border: none;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--white);
+            transition: background .2s;
+        }
+
+        .search-btn:hover { background: var(--red-dark); }
+
+        /* ── ADD PRODUCT BTN ── */
+        .add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--red);
+            color: var(--white);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background .2s, transform .15s;
+            white-space: nowrap;
+        }
+
+        .add-btn:hover { background: var(--red-dark); transform: scale(1.03); }
+
+        /* ── CONTENT AREA ── */
+        .content {
+            padding: 32px;
+            flex: 1;
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 700px) { .stats-row { grid-template-columns: 1fr; } }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: fadeUp .4s both;
+        }
+
+        .stat-card:nth-child(2) { animation-delay: .07s; }
+        .stat-card:nth-child(3) { animation-delay: .14s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: var(--red-glow);
+            border: 1px solid rgba(229,0,10,0.2);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--red);
+            flex-shrink: 0;
+        }
+
+        .stat-info p { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-info strong { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.04em; color: var(--white); }
+
+        /* ── TABLE CARD ── */
+        .table-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            animation: fadeUp .4s .1s both;
+        }
+
+        .table-card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-card-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.15rem;
+            letter-spacing: 0.07em;
+            color: var(--white);
+        }
+
+        .table-count {
+            background: var(--red-glow);
+            border: 1px solid rgba(229,0,10,0.25);
+            color: var(--red);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        /* ── TABLE ── */
+        .table-scroll { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 640px;
+        }
+
+        thead tr {
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+        td {
+            padding: 14px 20px;
+            font-size: 0.875rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        .td-id {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+        }
+
+        .td-title { font-weight: 600; color: var(--white); }
+
+        .td-desc {
+            color: var(--muted);
+            font-size: 0.82rem;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .td-price {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 0.04em;
+            color: var(--white);
+        }
+
+        .td-qty {
+            display: inline-block;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .action-btns { display: flex; align-items: center; gap: 8px; }
+
+        .btn-edit, .btn-delete {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 7px;
+            text-decoration: none;
+            transition: background .2s, transform .15s;
+            white-space: nowrap;
+        }
+
+        .btn-edit {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: #93c5fd;
+        }
+
+        .btn-edit:hover { background: rgba(59,130,246,0.22); transform: scale(1.05); }
+
+        .btn-delete {
+            background: var(--red-glow);
+            border: 1px solid rgba(229,0,10,0.25);
+            color: #fca5a5;
+        }
+
+        .btn-delete:hover { background: rgba(229,0,10,0.22); transform: scale(1.05); }
+
+        /* ── EMPTY STATE ── */
+        .empty-row td {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--muted);
+        }
+
+        .empty-row svg { margin: 0 auto 12px; opacity: 0.25; }
+
+        /* ── MODAL OVERLAY ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalIn .25s cubic-bezier(.22,.68,0,1.2);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        .modal-header {
+            padding: 24px 24px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 0.06em;
+            color: var(--white);
+        }
+
+        .modal-header h2 span { color: var(--red); }
+
+        .modal-close {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.2rem;
+            transition: color .2s, border-color .2s;
+            line-height: 1;
+        }
+
+        .modal-close:hover { color: var(--white); border-color: var(--border-hover); }
+
+        .modal-body { padding: 24px; }
+
+        /* ── FORM ── */
+        .form-group { margin-bottom: 18px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder { color: var(--muted); }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px var(--red-glow);
+        }
+
+        .form-textarea { resize: vertical; min-height: 90px; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* File upload */
+        .file-upload-wrap {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            position: relative;
+        }
+
+        .file-upload-wrap:hover { border-color: rgba(229,0,10,0.4); background: var(--red-glow); }
+
+        .file-upload-wrap input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-upload-icon { color: var(--red); margin-bottom: 6px; }
+        .file-upload-text { font-size: 0.82rem; color: var(--muted); }
+        .file-upload-text strong { color: var(--text); }
+
+        .form-submit {
+            width: 100%;
+            background: var(--red);
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background .2s, transform .15s;
+            margin-top: 6px;
+        }
+
+        .form-submit:hover { background: var(--red-dark); transform: scale(1.01); }
+
+        /* ── MOBILE ── */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrap { margin-left: 0; }
+            .content { padding: 20px 16px; }
+            .topbar { padding: 0 16px; }
+            .search-input { width: 160px; }
+            .search-input:focus { width: 200px; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .hamburger { display: flex !important; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .search-form { display: none; }
+        }
+
+        .hamburger {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 38px; height: 38px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            flex-shrink: 0;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 190;
+        }
+
+        .sidebar-backdrop.open { display: block; }
     </style>
 </head>
-<body class="bg-gray-100 p-6">
+<body>
 
-    <header class="bg-gray-800 text-white p-4 mb-6">
-        <h1 class="text-2xl font-bold">Products</h1>
-        <nav class="mt-2">
-            <a href="{{ url_for('admin_dashboard') }}" class="text-blue-300 hover:text-blue-500 mx-2">Dashboard</a>
-            <a href="{{ url_for('product') }}" 
-                class="text-blue-900 hover:text-blue-500 mx-2 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-md"
-                aria-label="Products">
-                Products
-            </a>
-            <a href="{{ url_for('order') }}" class="text-blue-300 hover:text-blue-500 mx-2">Orders</a>
-            <a href="{{ url_for('logout') }}" class="text-red-300 hover:text-red-500 mx-2">Logout</a>
-        </nav>
-    </header>
-
-    <main class="mb-6">
-        <div class="flex justify-end mb-6">
-            <form method="GET" class="flex flex-wrap mr-6">
-                <input type="text" name="query" placeholder="Search products" class="p-2 border border-gray-300 rounded-l-md w-full md:w-60 lg:w-96">
-                <button type="submit" class="bg-blue-600 text-white font-bold p-2 rounded-r-md hover:bg-blue-700">Search</button>
-            </form>
-            <button onclick="togglePopup()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700" aria-label="Add new product">
-                Add Product
-            </button>
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <a href="{{ url_for('admin_dashboard') }}" class="logo-wordmark"><span>RED</span> Admin</a>
         </div>
-        
 
-        <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md mb-6">
-            <thead>
-                <tr class="bg-gray-200 text-gray-600">
-                    <th class="p-3 text-left">ID</th>
-                    <th class="p-3 text-left">Title</th>
-                    <th class="p-3 text-left">Description</th>
-                    <th class="p-3 text-left">Price</th>
-                    <th class="p-3 text-left">Quantity</th>
-                    <th class="p-3 text-left">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in products %}
-                <tr class="border-b hover:bg-gray-100">
-                    <td class="p-3">{{ product.id }}</td>
-                    <td class="p-3">{{ product.title }}</td>
-                    <td class="p-3">{{ product.description }}</td>
-                    <td class="p-3">{{ product.price }}</td>
-                    <td class="p-3">{{ product.quantity }}</td>
-                    <td class="p-3">
-                        <a href="{{ url_for('edit_product', id=product.id) }}" class="text-blue-500 hover:text-blue-700" aria-label="Edit product {{ product.title }}">Edit</a>
-                        <a href="{{ url_for('delete_product', id=product.id) }}" class="text-red-500 hover:text-red-700 ml-2" aria-label="Delete product {{ product.title }}">Delete</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </main>
+        <span class="sidebar-label">Navigation</span>
 
-    <div id="add_pop" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg relative">
-            <button onclick="togglePopup()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700" aria-label="Close popup">
-                &times;
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+        <a href="{{ url_for('product') }}" class="nav-link active">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+            Products
+        </a>
+        <a href="{{ url_for('order') }}" class="nav-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Orders
+        </a>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+    <!-- ── MAIN ── -->
+    <div class="main-wrap">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <button class="hamburger" id="hamburger" onclick="openSidebar()" aria-label="Open menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
             </button>
-            <h1 class="text-xl font-semibold mb-4">Add Product</h1>
-            <form action="{{ url_for('product') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                <div>
-                    <label for="title" class="block text-gray-700 font-semibold">Title:</label>
-                    <input type="text" id="title" name="title" required class="w-full p-2 border border-gray-300 rounded-md">
+
+            <span class="topbar-title">Products <span>/</span> All</span>
+
+            <div class="topbar-right">
+                <form method="GET" class="search-form">
+                    <input class="search-input" type="text" name="query" placeholder="Search products…" autocomplete="off">
+                    <button class="search-btn" type="submit" aria-label="Search">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </button>
+                </form>
+                <button class="add-btn" onclick="togglePopup()" aria-label="Add new product">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add Product
+                </button>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="content">
+
+            <!-- Stats row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+                            <path d="M16 10a4 4 0 01-8 0"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Total Products</p>
+                        <strong>{{ products | length }}</strong>
+                    </div>
                 </div>
-                <div>
-                    <label for="description" class="block text-gray-700 font-semibold">Description:</label>
-                    <textarea id="description" name="description" required class="w-full p-2 border border-gray-300 rounded-md"></textarea>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Avg. Price</p>
+                        <strong>
+                            {% if products %}
+                                ${{ "%.0f" | format(products | map(attribute='price') | list | sum / products | length) }}
+                            {% else %}—{% endif %}
+                        </strong>
+                    </div>
                 </div>
-                <div>
-                    <label for="quantity" class="block text-gray-700 font-semibold">Quantity:</label>
-                    <input type="number" id="quantity" name="quantity" required class="w-full p-2 border border-gray-300 rounded-md">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <p>Total Stock</p>
+                        <strong>
+                            {% if products %}
+                                {{ products | map(attribute='quantity') | list | sum }}
+                            {% else %}—{% endif %}
+                        </strong>
+                    </div>
                 </div>
-                <div>
-                    <label for="price" class="block text-gray-700 font-semibold">Price:</label>
-                    <input type="number" step="0.01" id="price" name="price" required class="w-full p-2 border border-gray-300 rounded-md">
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h2>All Products</h2>
+                    <span class="table-count">{{ products | length }} items</span>
                 </div>
-                <div>
-                    <label for="images" class="block text-gray-700 font-semibold">Product Images:</label>
-                    <input type="file" id="images" name="images" accept="image/png, image/jpeg, image/jpg" class="w-full p-2 border border-gray-300 rounded-md">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <td class="td-id">{{ product.id }}</td>
+                                <td class="td-title">{{ product.title }}</td>
+                                <td><span class="td-desc">{{ product.description }}</span></td>
+                                <td class="td-price">${{ product.price }}</td>
+                                <td><span class="td-qty">{{ product.quantity }}</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <a href="{{ url_for('edit_product', id=product.id) }}" class="btn-edit" aria-label="Edit {{ product.title }}">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                            </svg>
+                                            Edit
+                                        </a>
+                                        <a href="{{ url_for('delete_product', id=product.id) }}" class="btn-delete" aria-label="Delete {{ product.title }}">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                                <path d="M10 11v6"/><path d="M14 11v6"/>
+                                                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                            </svg>
+                                            Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="empty-row">
+                                <td colspan="6">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" display="block">
+                                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+                                        <path d="M16 10a4 4 0 01-8 0"/>
+                                    </svg>
+                                    <p style="font-size:.9rem">No products yet. Add your first one!</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700">Add Product</button>
-            </form>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ── ADD PRODUCT MODAL ── -->
+    <div class="modal-overlay" id="add_pop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add <span>Product</span></h2>
+                <button class="modal-close" onclick="togglePopup()" aria-label="Close">×</button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('product') }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" id="title" name="title" required class="form-input" placeholder="Product name">
+                    </div>
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea id="description" name="description" required class="form-textarea" placeholder="Describe the product…"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" id="quantity" name="quantity" required class="form-input" placeholder="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="price" class="form-label">Price ($)</label>
+                            <input type="number" step="0.01" id="price" name="price" required class="form-input" placeholder="0.00" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Product Image</label>
+                        <div class="file-upload-wrap">
+                            <input type="file" id="images" name="images" accept="image/png,image/jpeg,image/jpg">
+                            <div class="file-upload-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                            </div>
+                            <p class="file-upload-text"><strong>Click to upload</strong> or drag & drop<br>PNG, JPG up to 10MB</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="form-submit">Add Product</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
         function togglePopup() {
-            const popup = document.getElementById('add_pop');
-            popup.classList.toggle('hidden');
+            const overlay = document.getElementById('add_pop');
+            overlay.classList.toggle('open');
+            document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
         }
+
+        // Close modal on backdrop click
+        document.getElementById('add_pop').addEventListener('click', function(e) {
+            if (e.target === this) togglePopup();
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const overlay = document.getElementById('add_pop');
+                if (overlay.classList.contains('open')) togglePopup();
+            }
+        });
+
+        // Mobile sidebar
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebarBackdrop').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarBackdrop').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // Show file name after selection
+        document.getElementById('images').addEventListener('change', function() {
+            const label = this.closest('.file-upload-wrap').querySelector('.file-upload-text');
+            if (this.files && this.files[0]) {
+                label.innerHTML = '<strong>' + this.files[0].name + '</strong>';
+            }
+        });
     </script>
 
 </body>

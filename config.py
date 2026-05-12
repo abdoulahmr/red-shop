@@ -4,7 +4,7 @@ import os
 
 class Config:
     DEBUG = True 
-    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://admin:Red$hop2024!@localhost/redshop'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///redshop.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'your_secret_key'
     ALLOWED_EXTENSIONS = {'svg', 'png', 'jpg', 'jpeg'}

@@ -6,10 +6,14 @@ from models import Order, Product, User, users, db
 from config import Config
 from api import api_bp
 
-app = Flask(__name__,static_folder='static')
+app = Flask(__name__, static_folder='static')
 app.config.from_object(Config)
 db.init_app(app)
 app.register_blueprint(api_bp)
+
+# Ensure upload directory exists
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 # Flask-Login Setup
 login_manager = LoginManager()
@@ -29,14 +33,30 @@ def home():
 # Product View Page
 @app.route('/product:<int:id>', methods=['GET', 'POST'])
 def product_view(id):
+    # Fix: Check if product exists first
     product = db.session.query(Product).filter(Product.id == id).first()
+    
+    if not product:
+        abort(404)
     
     if request.method == "POST":
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         address = request.form['address']
-        quantity = int(request.form['quantity'])
+        
+        try:
+            quantity = int(request.form['quantity'])
+        except ValueError:
+            flash('Invalid quantity.', 'danger')
+            return redirect(url_for('product_view', id=id))
+
+        # Improvement: Check stock
+        if quantity > product.quantity:
+            flash(f'Sorry, only {product.quantity} items available in stock.', 'danger')
+            return redirect(url_for('product_view', id=id))
+
         phone_number = request.form['phone']
+        
         new_order = Order(
             product_id=id,
             first_name=first_name,
@@ -45,17 +65,24 @@ def product_view(id):
             quantity=quantity,
             phone_number=phone_number
         )
+        
+        # Optional: Decrease product stock here
+        # product.quantity -= quantity 
+        
         db.session.add(new_order)
         db.session.commit()
         flash('Order placed successfully!', 'success')
         return redirect(url_for('home'))
     
-    return render_template('product_view.html',product=product)
+    return render_template('product_view.html', product=product)
 
 # Product Search Page
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     query = request.args.get('query')
+    if not query:
+        return redirect(url_for('home'))
+        
     products = db.session.query(Product).filter(Product.title.ilike(f'%{query}%')).all()
     return render_template('home.html', products=products, query=query)
 
@@ -91,19 +118,27 @@ def product():
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
-        quantity = int(request.form['quantity'])
-        price = float(request.form['price'])
-        image = request.files['images']
-
-        if not Config.allowed_file(image.filename):
-            flash('Invalid file type', 'error')
+        
+        try:
+            quantity = int(request.form['quantity'])
+            price = float(request.form['price'])
+        except ValueError:
+            flash('Invalid price or quantity format.', 'error')
             return redirect(url_for('product'))
 
-        # Generate a unique filename using the current timestamp
-        image_filename = datetime.now().strftime('%Y%m%d%H%M%S') + "_" + image.filename
-        image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+        image = request.files.get('images')
+
+        if image and image.filename:
+            if not Config.allowed_file(image.filename):
+                flash('Invalid file type', 'error')
+                return redirect(url_for('product'))
+
+            image_filename = datetime.now().strftime('%Y%m%d%H%M%S') + "_" + image.filename
+            image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+        else:
+            flash('Product image is required.', 'error')
+            return redirect(url_for('product'))
         
-        # Create a new product with the filename
         new_product = Product(
             title=title,
             description=description,
@@ -126,36 +161,36 @@ def edit_product(id):
 
     if not product:
         flash('Product not found', 'error')
-        return redirect(url_for('home_shop'))
+        return redirect(url_for('home')) # Fix: Changed from home_shop to home
 
     if request.method == 'POST':
         title = request.form['title']
         description = request.form['description']
-        quantity = int(request.form['quantity'])
-        price = float(request.form['price'])
+        
+        try:
+            quantity = int(request.form['quantity'])
+            price = float(request.form['price'])
+        except ValueError:
+             flash('Invalid input data.', 'error')
+             return redirect(url_for('edit_product', id=id))
+
         image = request.files.get('images')
 
-        # Check if a new image was uploaded
         if image and image.filename:
-            # Delete the old image from the server
             if product.image:
                 old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image)
                 if os.path.exists(old_image_path):
                     os.remove(old_image_path)
 
-            # Check if the new image file is allowed
             if not Config.allowed_file(image.filename):
                 flash('Invalid file type', 'error')
                 return redirect(url_for('edit_product', id=id))
 
-            # Save the new image to the server
             image_filename = datetime.now().strftime('%Y%m%d%H%M%S') + "_" + image.filename
             image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
         else:
-            # If no new image is uploaded, keep the old image filename
             image_filename = product.image
 
-        # Update the product details
         product.title = title
         product.description = description
         product.quantity = quantity
@@ -176,16 +211,14 @@ def delete_product(id):
     
     if not product:
         flash('Product not found', 'error')
-        return redirect(url_for('home_shop'))
+        return redirect(url_for('home')) # Fix: Changed from home_shop to home
 
-    # Delete the product's image from the directory
     if product.image:
         try:
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], product.image))
         except Exception as e:
-            flash(f"Error deleting image: {e}", 'error')
+            print(f"Error deleting image: {e}") # Log to console instead of flashing to avoid UI clutter
 
-    # Delete the product from the database
     db.session.delete(product)
     db.session.commit()
 
@@ -196,21 +229,24 @@ def delete_product(id):
 @app.route('/admin/orders')
 @login_required
 def order():
+    # Fix: Correctly unpack the tuple (Order, product_title)
     orders = db.session.query(Order, Product.title.label('product_title')) \
         .join(Product, Order.product_id == Product.id) \
         .all()
     
-    # Create a list of dictionaries for easier access in templates
-    order_list = [{'id': order.id,
-                   'first_name': order.first_name,
-                   'last_name': order.last_name,
-                   'address': order.address,
-                   'quantity': order.quantity,
-                   'date_time': order.date_time,
-                   'product': order.product_title,
-                   'phone_number': order.phone_number,
-                   'status': order.status,
-                   'note': order.note} for order, order.product_title in orders]
+    order_list = [
+        {'id': order.id,
+         'first_name': order.first_name,
+         'last_name': order.last_name,
+         'address': order.address,
+         'quantity': order.quantity,
+         'date_time': order.date_time,
+         'product': product_title, # Fix: Use the unpacked variable
+         'phone_number': order.phone_number,
+         'status': order.status,
+         'note': order.note
+        } for order, product_title in orders
+    ]
 
     return render_template('order.html', orders=order_list)
 
@@ -236,11 +272,11 @@ def delete_order(id):
     order = Order.query.get_or_404(id)
 
     try:
-        db.session.delete(order)  # Delete the order from the database
-        db.session.commit()  # Commit the transaction
+        db.session.delete(order)
+        db.session.commit()
         flash('Order successfully deleted.', 'success')
     except Exception as e:
-        db.session.rollback()  # Rollback in case of error
+        db.session.rollback()
         flash(f'Error deleting order: {e}', 'danger')
 
     return redirect(url_for('order'))
@@ -254,4 +290,4 @@ def logout():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
