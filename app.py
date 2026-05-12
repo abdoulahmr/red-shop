@@ -289,11 +289,12 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect(url_for('home'))
 
-if __name__ == '__main__':
-    db_uri = app.config['SQLALCHEMY_DATABASE_URI']
-    db_path = db_uri.replace('sqlite:///', '')
+# ── DATABASE INITIALIZATION ──
+db_uri = app.config['SQLALCHEMY_DATABASE_URI']
 
-    # Check if the database file exists
+if db_uri.startswith('sqlite:///'):
+    db_path = db_uri.replace('sqlite:///', '')
+    
     if not os.path.exists(db_path):
         print(f"Database not found at '{db_path}'. Creating tables...")
         with app.app_context():
@@ -301,4 +302,6 @@ if __name__ == '__main__':
             print("Database tables created successfully!")
     else:
         print("Database file exists. Skipping table creation.")
+
+if __name__ == '__main__':
     app.run(debug=True)
