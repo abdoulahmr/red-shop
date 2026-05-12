@@ -290,4 +290,15 @@ def logout():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
+    db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    db_path = db_uri.replace('sqlite:///', '')
+
+    # Check if the database file exists
+    if not os.path.exists(db_path):
+        print(f"Database not found at '{db_path}'. Creating tables...")
+        with app.app_context():
+            db.create_all()
+            print("Database tables created successfully!")
+    else:
+        print("Database file exists. Skipping table creation.")
     app.run(debug=True)
